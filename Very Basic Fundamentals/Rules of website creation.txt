@@ -1,0 +1,5 @@
+
+Use password protection function is Md5 & Sha1
+Use slashes function to protect your website data
+Secure your website to hacker cannot enter in your website by using html tags in fields by Htmlentities & Htmlspecialchars Functions
+Remove spaces with the sides with the trim function
