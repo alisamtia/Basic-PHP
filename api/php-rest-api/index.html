@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>PHP & Ajax CRUD</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <table id="main" border="0" cellspacing="0">
+    <tr>
+      <td id="header">
+        <h1>PHP REST API CRUD</h1>
+
+        <div id="search-bar">
+          <label>Search :</label>
+          <input type="text" id="search" autocomplete="off">
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td id="table-form">
+        <form id="add-form">
+          Name : <input type="text" name="sname" id="sname">
+          Age : <input type="number" name="sage" id="sage">
+          City : <input type="text" name="scity" id="scity">
+          <input type="submit" id="save-button" value="Save">
+        </form>
+      </td>
+    </tr>
+    <tr>
+      <td id="table-data">
+        <table width="100%" cellpadding="10px" >
+          <tr>
+            <th width="40px">Id</th>
+            <th>Name</th>
+            <th width="50px">Age</th>
+            <th width="150px">City</th>
+            <th width="60px">Edit</th>
+            <th width="70px">Delete</th>
+          </tr>
+          <tbody id="load-table">
+
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <div id="error-message" class="messages"></div>
+  <div id="success-message" class="messages"></div>
+
+  <!-- Popup Modal Box for Update the Records -->
+  <div id="modal">
+    <div id="modal-form">
+      <h2>Edit Form</h2>
+      <form action="" id="edit-form">
+      <table cellpadding="10px" width="100%">
+        <tr>
+          <td width="90px">First Name</td>
+          <td><input type="text" name="sname" id="edit-name">
+              <input type="text" name="sid" id="edit-id" hidden="">
+          </td>
+        </tr>
+        <tr>
+          <td>Age</td>
+          <td><input type="number" name="sage" id="edit-age"></td>
+        </tr>
+        <tr>
+          <td>City</td>
+          <td><input type="text" name="scity" id="edit-city"></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><input type="button" id="edit-submit" value="Update"></td>
+        </tr>
+      </table>
+      </form>
+      <div id="close-btn">X</div>
+    </div>
+  </div>
+
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+  function hide_e_m(){
+    $("#success-message").fadeOut();
+  }
+  //Fetch All Records
+  function load_data(daw){
+    if(daw=="replace"){
+      $("#load-table").html("");
+    }
+  $.ajax({
+    url: "http://localhost/api/php-rest-api/api-fetch-all.php",
+    method: "GET",
+    success: function(data){
+      if(data.status){
+        $("#load-table").append('<tr><td colspan="6"><h2>No result found!!</h2></td></tr>');
+      }else{
+      $.each(data,function(key,value){
+      $("#load-table").append('<tr><td class="center">'+ value.id +'</td><td>'+ value.student_name +'</td><td>'+ value.age +'</td><td>'+ value.city +'</td><td class="center"><button class="edit-btn" data-eid="'+ value.id +'">Edit</button></td><td class="center"><button class="delete-btn" data-id="'+ value.id +'">Delete</button></td></tr>');
+                });
+      }
+    }
+});
+};
+load_data("");
+  //Insert New Record
+  $(document).on("click","#save-button",function(event){
+    event.preventDefault();
+     var add_name=$("#sname").val();
+     var add_age=$("#sage").val();
+     var add_city=$("#scity").val();
+     if(add_name=="" || add_age=="" || add_city==""){
+       $("#error-message").fadeIn().html("All fields are Required!!");
+
+       setTimeout(  function hide_e_m(){
+           $("#error-message").fadeOut();
+         },3000);
+       $("#modal").hide();
+       load_data("replace");
+     }else{
+     var obj_add={"sname": add_name, "sage": add_age, "scity": add_city};
+     var json_add=JSON.stringify(obj_add);
+     $.ajax({
+       url: "http://localhost/api/php-rest-api/api-insert.php",
+       method: "PUT",
+       data:json_add,
+       success: function(data){
+         if(data.status==true){
+           $("#success-message").fadeIn().html(data.message);
+
+           setTimeout(hide_e_m,3000);
+           $("#modal").hide();
+           load_data("replace");
+         }
+         else{
+           $("#error-message").fadeIn().html(data.message);
+
+           setTimeout(  function hide_e_m(){
+               $("#error-message").fadeOut();
+             },3000);
+           $("#modal").hide();
+           load_data("replace");
+         }
+       }
+     });
+$("#add-form").trigger("reset");
+   }
+  })
+  //Delete Record
+  $(document).on("click",".delete-btn",function(){
+    var del_id=$(this).data("id");
+    var del_row=$(this).parent();
+    var obj_add={"sid": del_id};
+    var json_add=JSON.stringify(obj_add);
+    $.ajax({
+      url: "http://localhost/api/php-rest-api/api-delete.php",
+      type: "DELETE",
+      data: json_add,
+      success: function(data){
+        if(data.status==true){
+          del_row.fadeOut()
+          $("#success-message").fadeIn().html(data.message);
+          setTimeout(hide_e_m,3000);
+          load_data("replace");
+        }
+        else{
+          $("#error-message").fadeIn().html(data.message);
+          setTimeout(  function hide_e_m(){
+              $("#error-message").fadeOut();
+            },3000);
+          load_data("replace");
+        }
+      }
+    });
+  });
+  //Fetch Single Record : Show in Modal Box
+  $(document).on("click",".edit-btn",function(e){
+    $("#modal").show();
+    var id=$(this).data("eid");
+    var obj={"sid": id};
+    var json_f=JSON.stringify(obj)
+    $.ajax({
+      url: "http://localhost/api/php-rest-api/api-fetch-single.php?id="+id,
+      method: "POST",
+      data: json_f,
+      success: function(data){
+        console.log(data);
+        $("#edit-age").val(data[0].age);
+        $("#edit-name").val(data[0].student_name);
+        $("#edit-city").val(data[0].city);
+        $("#edit-id").val(data[0].id);
+      }
+    });
+  })
+  //Hide Modal Box
+  $("#close-btn").click(function(){
+    $("#modal").hide();
+  });
+  //Update Record
+  $(document).on("click","#edit-submit",function(){
+    var edit_age=$("#edit-age").val();
+    var edit_name=$("#edit-name").val();
+    var edit_city=$("#edit-city").val();
+    var edit_id=$("#edit-id").val();
+
+    var obj_edit={"sid": edit_id, "sname": edit_name, "sage": edit_age, "scity": edit_city};
+    var json_edit=JSON.stringify(obj_edit);
+    $.ajax({
+      url: "http://localhost/api/php-rest-api/api-update.php",
+      method: "PUT",
+      data:json_edit,
+      success: function(data){
+        if(data.status==true){
+          $("#success-message").fadeIn().html(data.message);
+
+          setTimeout(hide_e_m,3000);
+          $("#modal").hide();
+          load_data("replace");
+        }
+      }
+    });
+
+  })
+
+  //Live Search Record
+  $(document).on("keyup","#search",function(){
+    var s_term=$("#search").val();
+    $("#load-table").html("");
+    $.ajax({
+      url: "http://localhost/api/php-rest-api/api-search.php?search="+s_term,
+      type: "GET",
+      success: function(data){
+        if(data.status==false){
+          $("#load-table").append('<tr><td colspan="6"><h2>No result found!!</h2></td></tr>');
+        }else{
+        $.each(data,function(key,value){
+        $("#load-table").append('<tr><td class="center">'+ value.id +'</td><td>'+ value.student_name +'</td><td>'+ value.age +'</td><td>'+ value.city +'</td><td class="center"><button class="edit-btn" data-eid="'+ value.id +'">Edit</button></td><td class="center"><button class="delete-btn" data-id="'+ value.id +'">Delete</button></td></tr>');
+                  });
+        }
+      }
+    });
+
+  });
+
+
+
+
+
+});
+</script>
+</body>
+</html>
