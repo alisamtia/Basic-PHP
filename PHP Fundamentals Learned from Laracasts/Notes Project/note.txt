@@ -1,0 +1,4 @@
+run it in laragon terminal:
+php -S localhost:80 -t public
+
+Also

@@ -1,0 +1,17 @@
+{
+    "name": "ali/app",
+    "autoload": {
+        "psr-4": {
+            "core\\": "core/",
+            "Http\\": "Http/"
+        }
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.24"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
